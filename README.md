@@ -47,7 +47,7 @@ git --version      # Required for pre-commit hook
 Copy the AI-DLC × CoDD files to your project root:
 
 ```bash
-# From the AI-DLC_CoDD/en/ directory:
+# From the  directory:
 cp CLAUDE.md /path/to/your-project/
 cp -r .claude/ /path/to/your-project/
 cp -r .codd/ /path/to/your-project/
@@ -72,7 +72,6 @@ AI-DLC CoDD USING. Please follow CLAUDE.md.
 ## Directory Structure
 
 ```
-AI-DLC_CoDD/en/
 ├── CLAUDE.md                          # AI-DLC × CoDD main workflow (copy to project root)
 ├── .claude/
 │   ├── settings.json                  # Hooks + permissions (CoDD + Graphify)
