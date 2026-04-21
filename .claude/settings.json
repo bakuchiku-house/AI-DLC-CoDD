@@ -1,0 +1,52 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(codd *)",
+      "Bash(graphify *)",
+      "Bash(python3 -m graphify *)"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/install-codd-pre-commit.sh 2>/dev/null || true"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "PYTHONIOENCODING=utf-8 PYTHONUTF8=1 codd scan --path . > /dev/null 2>&1 || true"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Glob|Grep",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [ -f graphify-out/GRAPH_REPORT.md ]; then echo '[Graphify] Knowledge graph report available — read graphify-out/GRAPH_REPORT.md before searching files for architectural context.' >&2; fi; exit 0"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "TOOL_CMD=$(cat | python3 -c \"import json,sys; d=json.load(sys.stdin); print(d.get('tool_input',{}).get('command',''))\" 2>/dev/null || echo ''); if echo \"$TOOL_CMD\" | grep -qiE \"rm -rf|git reset --hard|git clean -fd|drop table|truncate|format c:|mkfs\"; then echo 'WARNING: Potentially destructive command detected. Review carefully before proceeding.' >&2; fi; exit 0"
+          }
+        ]
+      }
+    ]
+  }
+}
