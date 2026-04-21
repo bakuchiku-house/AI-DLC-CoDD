@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -uo pipefail
 # NOTE: -e (errexit) is intentionally omitted.
-# Step 3 'codd hooks install' can fail on Windows with a symlink permission error (WinError 1314).
+# Step 4 'codd hooks install' can fail on Windows with a symlink permission error (WinError 1314).
 # With -e the entire script would abort silently; instead, each step handles errors individually.
 
 # install-codd-pre-commit.sh
@@ -13,14 +13,29 @@ set -uo pipefail
 #   bash .claude/hooks/install-codd-pre-commit.sh
 #
 # What it does:
+#   0. Checks that the 'git' binary is available on PATH (NEW)
 #   1. Checks that the 'codd' CLI is available on PATH
 #   2. Checks if .git directory exists; if not, runs 'git init' automatically
-#   3. Runs 'codd hooks install --path .' to install the pre-commit hook
+#   3. Runs 'graphify hook install' if graphify is available (AST auto-update on commit)
+#   4. Runs 'codd hooks install --path .' to install the pre-commit hook
 #      (idempotent: safe to run multiple times)
 #      On Windows, if symlink creation fails, prints guidance and exits cleanly
 #
 # NOTE on output: All messages use stdout (not stderr) so they remain visible
 # when this script is called from Claude Code hooks with stderr suppressed.
+
+# ── 0. Check that git is available ────────────────────────────────────────────
+if ! command -v git &> /dev/null; then
+    echo "ERROR: 'git' command not found."
+    echo ""
+    echo "Please install Git before using this project:"
+    echo "  https://git-scm.com/downloads"
+    echo "  Windows: winget install Git.Git"
+    echo ""
+    echo "After installation, restart Claude Code or run this script manually:"
+    echo "  bash .claude/hooks/install-codd-pre-commit.sh"
+    exit 1
+fi
 
 # ── 1. Check that codd is available ───────────────────────────────────────────
 if ! command -v codd &> /dev/null; then
@@ -41,7 +56,13 @@ if [ ! -d ".git" ]; then
     echo "INFO: Git repository initialized at $(pwd)/.git"
 fi
 
-# ── 3. Install the pre-commit hook ────────────────────────────────────────────
+# ── 3. Register graphify post-commit hook (only if graphify is available) ────
+# graphify hook install: auto-updates AST on every git commit (no LLM cost)
+if command -v graphify &> /dev/null; then
+    graphify hook install > /dev/null 2>&1 || true
+fi
+
+# ── 4. Install the CoDD pre-commit hook ───────────────────────────────────────
 if ! codd hooks install --path . 2>&1; then
     echo ""
     echo "INFO: codd hooks install did not complete (likely WinError 1314 on Windows)."

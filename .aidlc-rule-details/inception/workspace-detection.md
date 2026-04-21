@@ -9,6 +9,58 @@ codd:
 
 **Purpose**: Determine workspace state and check for existing AI-DLC projects
 
+---
+
+## Step 0: MANDATORY — Prerequisite Tool Check (Hard Gate)
+
+> **CRITICAL**: This step MUST be executed before all other work. If any tool is missing, **do NOT proceed to the next step under any circumstances**. AI compensating for missing tools or simulating their behavior is strictly forbidden — the workflow operates exclusively when tools are correctly installed.
+
+Run the following commands to verify all prerequisite tools:
+
+```bash
+# 1. Verify Git (required for CoDD hooks, codd impact, codd propagate)
+git --version
+
+# 2. Verify CoDD (document engine and design coherence)
+codd --version
+
+# 3. Verify Graphify (knowledge graph — sole user-visible graph tool)
+graphify --version
+```
+
+**If any command fails → STOP immediately, display installation instructions, and suspend work until the user completes installation:**
+
+```
+🛑 Prerequisite tools are missing — cannot proceed until installation is complete
+
+❌ Git not found (required):
+   Install from: https://git-scm.com/downloads
+   Windows: winget install Git.Git
+   Verify: git --version
+
+❌ CoDD not found (required):
+   pip install codd-dev
+   Verify: codd --version
+
+❌ Graphify not found (required):
+   pip install graphifyy
+   Verify: graphify --version
+
+Please restart the workflow after all tools are confirmed installed.
+```
+
+**Proceed to Step 1 ONLY when all three tools report their version successfully.**
+
+> ⚠️ **AI compensation and workarounds are forbidden**: If tools are missing, the AI MUST NOT:
+> - Continue operation without the tools
+> - Simulate or emulate tool behavior
+> - Proceed with "install later"
+> - Replace CoDD/Graphify processing with AI-generated approximations
+>
+> Require the user to install the tools and verify with `--version` before proceeding. Stop completely until this is done.
+
+---
+
 ## Step 1: Check for Existing AI-DLC Project
 
 > **MANDATORY — Audit Log (BEFORE workspace scan)**: Log the user's initial request in `aidlc-docs/audit.md` immediately. Record the user's COMPLETE RAW INPUT, word-for-word as typed — **never summarize, shorten, or paraphrase**. Use this format:

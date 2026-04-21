@@ -23,7 +23,13 @@
         "hooks": [
           {
             "type": "command",
+            "async": true,
             "command": "PYTHONIOENCODING=utf-8 PYTHONUTF8=1 codd scan --path . > /dev/null 2>&1 || true"
+          },
+          {
+            "type": "command",
+            "async": true,
+            "command": "if [ -f graphify-out/graph.json ]; then graphify . --update --no-viz > /dev/null 2>&1 || true; fi"
           }
         ]
       }

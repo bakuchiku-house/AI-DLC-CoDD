@@ -112,6 +112,128 @@ AI-DLC CoDD USING. Please follow CLAUDE.md.
 
 ---
 
+## Working with Graphs — How to View and Use Them
+
+AI-DLC × CoDD generates two types of graphs. Understanding each one's role and how to use it dramatically improves development efficiency.
+
+### What Gets Generated
+
+```
+your-project/
+├── graphify-out/              ← [Graphify] User-facing graph (Layer 3)
+│   ├── graph.html             ← Interactive visualization (open in browser)
+│   ├── GRAPH_REPORT.md        ← Plain-language audit report (Claude auto-reads this)
+│   ├── graph.json             ← Canonical knowledge graph (persistent, queryable)
+│   └── cost.json              ← Cumulative token cost log
+│
+└── .codd/scan/                ← [CoDD] Internal dependency graph (Layer 2, plumbing only)
+    ├── nodes.jsonl
+    └── edges.jsonl
+```
+
+> **Key distinction**: `graphify-out/` is the graph you view and interact with. `.codd/scan/` is internal plumbing for `codd impact`/`codd propagate` — do not modify it directly.
+
+---
+
+### How to Read Each File
+
+#### `graph.html` — Interactive Graph (Visual Exploration)
+
+**How to open**: Just open in any browser — no server required.
+
+```bash
+# Windows
+start graphify-out/graph.html
+
+# Mac / Linux
+open graphify-out/graph.html
+```
+
+**What you see**:
+- **Nodes (dots)**: Classes, functions, design docs, and other concepts in your codebase
+- **Edges (lines)**: Relationships between nodes (depends on, calls, references, etc.)
+- **Color-coded clusters**: Communities detected by the Leiden algorithm — each cluster is a candidate unit of work
+- **Large nodes (god nodes)**: High-connectivity hubs — architectural centers with maximum change impact
+
+**When to use**: Getting a visual overview of your architecture, identifying candidate units for AI-DLC, spotting high-risk nodes before changes.
+
+#### `GRAPH_REPORT.md` — Audit Report (Claude Auto-Reads This)
+
+**Claude Code reads this automatically** — the PreToolUse hook notifies Claude before every Glob/Grep search.
+
+**How to open**: Any text editor or Markdown preview.
+
+**Contents**:
+- **God Nodes**: Top-connected nodes (highest change impact — touch these carefully)
+- **Surprising Connections**: Unexpected links between components (refactoring candidates)
+- **Community Structure**: Leiden-detected functional clusters with cohesion scores
+- **Suggested Questions**: Auto-generated exploration queries from the graph structure
+
+**When to use**: Before starting implementation (understand what you're touching), during architecture reviews, as evidence for design decisions.
+
+#### `graph.json` — Canonical Knowledge Graph (Query Interface)
+
+**Not meant to be read directly** — query it with `/graphify` commands.
+
+```
+# Ask questions in natural language
+/graphify query "What does the authentication flow depend on?"
+/graphify query "Which modules have the highest change risk?"
+
+# Trace paths between concepts
+/graphify path "UserService" "Database"
+
+# Get a plain-language explanation of any node
+/graphify explain "AuthModule"
+```
+
+---
+
+### How the Graphs Stay in Sync Automatically
+
+The graphs are kept current through multiple automatic mechanisms:
+
+| Trigger | CoDD graph | Graphify graph | Mechanism |
+|---------|-----------|----------------|-----------|
+| File edit (Write/Edit) | ✅ Immediately | ✅ Async incremental | PostToolUse hook |
+| `git commit` | — | ✅ AST-only (no LLM) | post-commit hook |
+| Completion Gate | ✅ `codd extract` | ✅ `/graphify --update` | Three-way coherence closure |
+
+> **When to update manually**: After large-scale changes, or for the initial build when `graphify-out/graph.json` does not yet exist, run `/graphify . --mode deep`.
+
+---
+
+### Graph Usage Flow in Daily Development
+
+```
+1. Before implementing → Read GRAPH_REPORT.md (understand impact + architecture)
+        ↓
+2. During development → Files auto-update on every edit (PostToolUse hook)
+        ↓
+3. Design review → /graphify query "coherence summary"
+        ↓
+4. git commit → AST auto-update (post-commit hook, no LLM cost)
+        ↓
+5. Completion Gate → Three-way coherence closure (CoDD primary, Graphify derived)
+```
+
+---
+
+### Troubleshooting: Graph Is Stale or Missing
+
+```bash
+# Incremental update (re-extracts only changed files)
+/graphify . --update
+
+# Full rebuild (re-scans everything — use after large refactors)
+/graphify . --mode deep
+
+# Re-run clustering only (re-analyzes existing graph structure)
+/graphify . --cluster-only
+```
+
+---
+
 ## Next Steps
 
 - **[QUICKSTART.md](QUICKSTART.md)** — Start your first AI-DLC × CoDD project in 5 minutes
