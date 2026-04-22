@@ -15,6 +15,8 @@ codd:
 
 > **CRITICAL**: This step MUST be executed before all other work. If any tool is missing, **do NOT proceed to the next step under any circumstances**. AI compensating for missing tools or simulating their behavior is strictly forbidden — the workflow operates exclusively when tools are correctly installed.
 
+> **IMPORTANT — How to execute**: Run each command below **individually via the Bash tool** and verify the output. Do NOT infer tool availability from git status, file system state, or any other indirect signal. Each check MUST be explicitly executed.
+
 Run the following commands to verify all prerequisite tools:
 
 ```bash
@@ -25,7 +27,8 @@ git --version
 codd --version
 
 # 3. Verify Graphify (knowledge graph — sole user-visible graph tool)
-graphify --version
+# Note: graphify --version is not implemented; use --help to verify CLI availability
+graphify --help > /dev/null 2>&1 && echo "graphify: OK" || echo "graphify: NOT FOUND"
 ```
 
 **If any command fails → STOP immediately, display installation instructions, and suspend work until the user completes installation:**
@@ -44,12 +47,12 @@ graphify --version
 
 ❌ Graphify not found (required):
    pip install graphifyy
-   Verify: graphify --version
+   Verify: graphify --help > /dev/null 2>&1 && echo "graphify: OK"
 
 Please restart the workflow after all tools are confirmed installed.
 ```
 
-**Proceed to Step 1 ONLY when all three tools report their version successfully.**
+**Proceed to Step 1 ONLY when all three commands exit successfully** (git and codd show a version string; graphify outputs "graphify: OK").
 
 > ⚠️ **AI compensation and workarounds are forbidden**: If tools are missing, the AI MUST NOT:
 > - Continue operation without the tools
@@ -228,14 +231,24 @@ codd extract
 
 ### Install Pre-commit Hook (MANDATORY after codd.yaml creation)
 
-Run `codd hooks install --path .` to install the git pre-commit hook now that `codd.yaml` exists:
+> **CRITICAL**: Use the install script — do NOT run `codd hooks install --path .` directly. The install script handles `.git` initialization automatically, and running `codd hooks install` without an initialized git repo is a blocking error that must be resolved, not skipped.
 
 ```bash
-codd hooks install --path .
-# → Installs .git/hooks/pre-commit for CoDD validation on git commit
-# → On Windows: if symlink fails, guidance is displayed — continue without the hook
-# → This step is required here because the SessionStart hook ran before codd.yaml existed (Brownfield projects)
+bash .claude/hooks/install-codd-pre-commit.sh
+# → Step 0: checks git binary (exits with instructions if missing)
+# → Step 1: checks codd binary (exits with instructions if missing)
+# → Step 2: runs `git init` automatically if .git does not exist (MANDATORY — not deferrable)
+# → Step 3: registers graphify hook install (if graphify is available)
+# → Step 4: installs CoDD pre-commit hook (with Windows copy fallback for WinError 1314)
 ```
+
+**If the script exits with error**:
+- `git binary not found` → Install Git per Step 0 instructions. Do NOT continue without git.
+- `codd binary not found` → Install CoDD per Step 1 instructions. Do NOT continue without codd.
+- `.git not found` (only when script bypassed) → Run `git init` first, then re-run the script.
+- `WinError 1314` (Windows symlink) → The script applies a file-copy fallback automatically. This is the **only** non-blocking case.
+
+> ⚠️ **AI compensation is forbidden**: If this step fails for any reason other than WinError 1314, do NOT say "will configure later" or "proceeding without the hook". Stop and resolve the error.
 
 > **Why this is needed**: The SessionStart hook runs `install-codd-pre-commit.sh` at session start. In Brownfield projects, `.codd/codd.yaml` does not yet exist at that point, so `codd hooks install` fails with "config dir not found". Running it explicitly here (after codd.yaml is created) ensures the pre-commit hook is installed.
 

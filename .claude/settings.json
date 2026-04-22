@@ -29,7 +29,7 @@
           {
             "type": "command",
             "async": true,
-            "command": "if [ -f graphify-out/graph.json ]; then graphify . --update --no-viz > /dev/null 2>&1 || true; fi"
+            "command": "if [ -f graphify-out/graph.json ]; then PYTHONIOENCODING=utf-8 PYTHONUTF8=1 graphify . --update --no-viz > /dev/null 2>&1 || true; fi"
           }
         ]
       }
